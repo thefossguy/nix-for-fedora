@@ -2,7 +2,7 @@
 ## (rpmautospec version 0.3.5)
 ## RPMAUTOSPEC: autorelease, autochangelog
 %define autorelease(e:s:pb:n) %{?-p:0.}%{lua:
-    release_number = 1;
+    release_number = 2;
     base_release_number = tonumber(rpm.expand("%{?-b*}%{!?-b:1}"));
     print(release_number + base_release_number - 1);
 }%{?-e:.%{-e*}}%{?-s:.%{-s*}}%{!?-n:%{?dist}}
@@ -20,24 +20,29 @@ Source0:        https://github.com/NixOS/nix/archive/%{version_no_tilde}/%{name}
 BuildRequires:  autoconf
 BuildRequires:  autoconf-archive
 BuildRequires:  automake
+BuildRequires:  bison
 BuildRequires:  boost-devel
 BuildRequires:  brotli-devel
 BuildRequires:  curl-devel
 BuildRequires:  editline-devel
+BuildRequires:  flex
 BuildRequires:  gc-devel
+BuildRequires:  gcc-c++
+BuildRequires:  gmock-devel
+BuildRequires:  gtest-devel
+BuildRequires:  jq
 BuildRequires:  json-devel
 BuildRequires:  libarchive-devel
 BuildRequires:  libcpuid-devel
+BuildRequires:  libgit2-devel
 BuildRequires:  libseccomp-devel
 BuildRequires:  libsodium-devel
 BuildRequires:  lowdown-devel
 BuildRequires:  openssl-devel
+BuildRequires:  rapidcheck-devel
 BuildRequires:  sqlite-devel
-BuildRequires:  gcc-c++
-BuildRequires:  bison
-BuildRequires:  flex
 BuildRequires:  systemd-rpm-macros
-BuildRequires:  jq
+
 # For documentation, not yet used:
 # BuildRequires:  graphviz
 
