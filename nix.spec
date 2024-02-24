@@ -63,7 +63,7 @@ OPTIONS=(
 
   # Those libraries are unversioned, and we don't install the headers,
   # so let's move them out of the public dir.
-  --libdir=%{_libdir}/nix 
+  --libdir=%{_libdir}/nix
   --libexecdir=%{_libexecdir}
 )
 
