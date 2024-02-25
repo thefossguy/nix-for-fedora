@@ -2,7 +2,7 @@
 ## (rpmautospec version 0.3.5)
 ## RPMAUTOSPEC: autorelease, autochangelog
 %define autorelease(e:s:pb:n) %{?-p:0.}%{lua:
-    release_number = 3;
+    release_number = 4;
     base_release_number = tonumber(rpm.expand("%{?-b*}%{!?-b:1}"));
     print(release_number + base_release_number - 1);
 }%{?-e:.%{-e*}}%{?-s:.%{-s*}}%{!?-n:%{?dist}}
@@ -89,6 +89,63 @@ rm %{buildroot}/etc/init/nix-daemon.conf
 
 ln -vfs --relative %{buildroot}$(readlink %{buildroot}%{_libexecdir}/nix/build-remote) \
                                           %{buildroot}%{_libexecdir}/nix/build-remote
+
+%pre
+# mkdirs
+nix_dirs=(
+    '/nix'
+    '/nix/var'
+    '/nix/var/log'
+    '/nix/var/log/nix'
+    '/nix/var/log/nix/drvs'
+    '/nix/var/nix'
+    '/nix/var/nix/daemon-socket'
+    '/nix/var/nix/db'
+    '/nix/var/nix/gcroots'
+    '/nix/var/nix/gcroots/per-user'
+    '/nix/var/nix/profiles'
+    '/nix/var/nix/profiles/per-user'
+    '/nix/var/nix/temproots'
+    '/nix/var/nix/userpool'
+)
+for d in "${nix_dirs[@]}"; do
+if [ ! -d "$d" ]; then
+    mkdir -p "$d"
+    chmod 755 "$d"
+fi
+done
+
+
+if ! getent group nixbld > /dev/null; then
+    groupadd -r nixbld -gid 30000
+fi
+
+# while the nixos.org manual only shows 10 users in the example,
+# the Determinate Systems installer creates 32 users
+# more users = more concurrent builds
+for n in $(seq 1 32); do
+    if ! getent passwd "nixbld$n" > /dev/null; then
+        useradd -c "Nix build user $n" \
+            -d /var/empty \
+            -g nixbld \
+            -G nixbld \
+            -u $(( 3000 + $n )) \
+            -M -N -r -S "$(command -v nologin)" \
+            "nixbld$n"
+    fi
+done
+
+# shell integrations
+shell_dirs=(
+    '/etc/zsh'
+    '/usr/share/fish/vendor_conf.d'
+)
+for d in "${shell_dirs[@]}"; do
+    if [ ! -d "$d" ]; then
+        mkdir -p "$d"
+        chmod 755 "$d"
+    fi
+done
 
 %post
 %systemd_post nix-daemon.socket nix-daemon.service
