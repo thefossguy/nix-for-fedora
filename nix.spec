@@ -2,7 +2,7 @@
 ## (rpmautospec version 0.3.5)
 ## RPMAUTOSPEC: autorelease, autochangelog
 %define autorelease(e:s:pb:n) %{?-p:0.}%{lua:
-    release_number = 5;
+    release_number = 6;
     base_release_number = tonumber(rpm.expand("%{?-b*}%{!?-b:1}"));
     print(release_number + base_release_number - 1);
 }%{?-e:.%{-e*}}%{?-s:.%{-s*}}%{!?-n:%{?dist}}
@@ -16,6 +16,8 @@ Summary:        Package manager for NixOS
 License:        LGPL-2.1
 URL:            https://github.com/NixOS/nix
 Source0:        https://github.com/NixOS/nix/archive/%{version_no_tilde}/%{name}-%{version_no_tilde}.tar.gz
+Source1:        nix.conf
+Source2:        registry.json
 
 BuildRequires:  autoconf
 BuildRequires:  autoconf-archive
@@ -33,7 +35,6 @@ BuildRequires:  gtest-devel
 BuildRequires:  jq
 BuildRequires:  json-devel
 BuildRequires:  libarchive-devel
-BuildRequires:  libcpuid-devel
 BuildRequires:  libgit2-devel
 BuildRequires:  libseccomp-devel
 BuildRequires:  libsodium-devel
@@ -42,6 +43,10 @@ BuildRequires:  openssl-devel
 BuildRequires:  rapidcheck-devel
 BuildRequires:  sqlite-devel
 BuildRequires:  systemd-rpm-macros
+
+%ifarch x86_64
+BuildRequires:  libcpuid-devel
+%endif
 
 # For documentation, not yet used:
 # BuildRequires:  graphviz
@@ -66,6 +71,11 @@ OPTIONS=(
   # Documentation is available online
   --disable-doc-gen
 
+  # cpuid is used only on x86, even then, it is optional
+%ifnarch
+  --disable-cpuid
+%endif
+
   # Those libraries are unversioned, and we don't install the headers,
   # so let's move them out of the public dir.
   --libdir=%{_libdir}/nix
@@ -77,6 +87,10 @@ OPTIONS=(
 
 %install
 %make_install
+
+# nix config
+mkdir -p %{buildroot}/etc/nix
+cp %{SOURCE1} %{SOURCE2} %{buildroot}/etc/nix/
 
 # Devel files that we don't want to use
 rm -r %{buildroot}%{_includedir}/nix \
@@ -162,6 +176,8 @@ set +x
 %systemd_postun_with_restart nix-daemon.socket nix-daemon.service
 
 %files
+/etc/nix/nix.conf
+/etc/nix/registry.json
 %{_bindir}/nix
 %{_bindir}/nix-*
 %dir %{_libdir}/nix
