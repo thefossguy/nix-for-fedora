@@ -2,7 +2,7 @@
 ## (rpmautospec version 0.3.5)
 ## RPMAUTOSPEC: autorelease, autochangelog
 %define autorelease(e:s:pb:n) %{?-p:0.}%{lua:
-    release_number = 4;
+    release_number = 5;
     base_release_number = tonumber(rpm.expand("%{?-b*}%{!?-b:1}"));
     print(release_number + base_release_number - 1);
 }%{?-e:.%{-e*}}%{?-s:.%{-s*}}%{!?-n:%{?dist}}
@@ -91,7 +91,7 @@ ln -vfs --relative %{buildroot}$(readlink %{buildroot}%{_libexecdir}/nix/build-r
                                           %{buildroot}%{_libexecdir}/nix/build-remote
 
 %pre
-# mkdirs
+set -x
 nix_dirs=(
     '/nix'
     '/nix/var'
@@ -117,7 +117,7 @@ done
 
 
 if ! getent group nixbld > /dev/null; then
-    groupadd -r nixbld -gid 30000
+    groupadd --system --gid 30000 nixbld
 fi
 
 # while the nixos.org manual only shows 10 users in the example,
@@ -125,12 +125,16 @@ fi
 # more users = more concurrent builds
 for n in $(seq 1 32); do
     if ! getent passwd "nixbld$n" > /dev/null; then
-        useradd -c "Nix build user $n" \
-            -d /var/empty \
-            -g nixbld \
-            -G nixbld \
-            -u $(( 3000 + $n )) \
-            -M -N -r -S "$(command -v nologin)" \
+        useradd \
+            --home-dir /var/empty \
+            --comment "Nix build user $n" \
+            --gid nixbld \
+            --groups nixbld \
+            --no-user-group \
+            --system \
+            --shell "$(command -v nologin)" \
+            --uid $(( 30000 + $n )) \
+            --password '!' \
             "nixbld$n"
     fi
 done
@@ -146,6 +150,7 @@ for d in "${shell_dirs[@]}"; do
         chmod 755 "$d"
     fi
 done
+set +x
 
 %post
 %systemd_post nix-daemon.socket nix-daemon.service
