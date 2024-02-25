@@ -72,7 +72,7 @@ OPTIONS=(
   --disable-doc-gen
 
   # cpuid is used only on x86, even then, it is optional
-%ifnarch
+%ifnarch x86_64
   --disable-cpuid
 %endif
 
