@@ -123,17 +123,15 @@ nix_dirs=(
     '/nix/var/nix/userpool'
 )
 for d in "${nix_dirs[@]}"; do
-if [ ! -d "$d" ]; then
-    mkdir -p "$d"
-    chmod 755 "$d"
-fi
+    if [ ! -d "$d" ]; then
+        mkdir -p "$d"
+        chmod 755 "$d"
+    fi
 done
-
 
 if ! getent group nixbld > /dev/null; then
     groupadd --system --gid 30000 nixbld
 fi
-
 # while the nixos.org manual only shows 10 users in the example,
 # the Determinate Systems installer creates 32 users
 # more users = more concurrent builds
@@ -153,7 +151,6 @@ for n in $(seq 1 32); do
     fi
 done
 
-# shell integrations
 shell_dirs=(
     '/etc/zsh'
     '/usr/share/fish/vendor_conf.d'
@@ -170,6 +167,37 @@ set +x
 %systemd_post nix-daemon.socket nix-daemon.service
 
 %preun
+set -x
+for n in $(seq 1 32); do
+    if getent passwd "nixbld$n" > /dev/null; then
+        userdel "nixbld$1"
+    fi
+done
+if getent group nixbld > /dev/null; then
+    groupdel nixbld
+fi
+nix_dirs=(
+    '/nix/var/nix/userpool'
+    '/nix/var/nix/temproots'
+    '/nix/var/nix/profiles/per-user'
+    '/nix/var/nix/profiles'
+    '/nix/var/nix/gcroots/per-user'
+    '/nix/var/nix/gcroots'
+    '/nix/var/nix/db'
+    '/nix/var/nix/daemon-socket'
+    '/nix/var/nix'
+    '/nix/var/log/nix/drvs'
+    '/nix/var/log/nix'
+    '/nix/var/log'
+    '/nix/var'
+    '/nix'
+)
+for d in "${nix_dirs[@]}"; do
+    if [ -d "$d" ]; then
+        rm -rf "$d"
+    fi
+done
+set +x
 %systemd_preun nix-daemon.socket nix-daemon.service
 
 %postun
