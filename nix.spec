@@ -2,7 +2,7 @@
 ## (rpmautospec version 0.3.5)
 ## RPMAUTOSPEC: autorelease, autochangelog
 %define autorelease(e:s:pb:n) %{?-p:0.}%{lua:
-    release_number = 6;
+    release_number = 7;
     base_release_number = tonumber(rpm.expand("%{?-b*}%{!?-b:1}"));
     print(release_number + base_release_number - 1);
 }%{?-e:.%{-e*}}%{?-s:.%{-s*}}%{!?-n:%{?dist}}
@@ -47,6 +47,11 @@ BuildRequires:  systemd-rpm-macros
 %ifarch x86_64
 BuildRequires:  libcpuid-devel
 %endif
+
+Requires:       boost-context
+Requires:       editline
+Requires:       gc
+Requires:       lowdown-libs
 
 # For documentation, not yet used:
 # BuildRequires:  graphviz
